@@ -6,6 +6,9 @@ export const CHANNELS: MediaChannel[] = [
     name: 'Google 디멘드젠',
     platform: 'Google',
     color: 'bg-blue-600/80 text-white',
+    links: [
+      { label: 'Google 디멘드젠 공식 가이드', url: 'https://support.google.com/google-ads/answer/13704860?hl=ko', type: 'url' },
+    ],
     formats: [
       {
         id: 'demand_gen',

@@ -27,12 +27,19 @@ export interface AdFormat {
   exampleImages?: string[]; // 완성 소재 예시 이미지 경로 (/images/...)
 }
 
+export interface GuideLink {
+  label: string;
+  url: string;
+  type: 'pdf' | 'url';
+}
+
 export interface MediaChannel {
   id: string;
   name: string;
   platform: string;
   color: string;
   formats: AdFormat[];
+  links?: GuideLink[];
 }
 
 export interface Submission {

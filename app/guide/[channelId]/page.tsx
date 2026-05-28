@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { getChannel, CHANNELS } from '../../../lib/channels';
 import { ChannelForm } from '../../components/ChannelForm';
 import { ImageGallery } from '../../components/ImageGallery';
-import type { ImageSpec } from '../../../lib/types';
+import type { GuideLink, ImageSpec } from '../../../lib/types';
 
 function ImageSpecTable({ specs }: { specs: ImageSpec[] }) {
   if (!specs.length) return null;
@@ -46,6 +46,34 @@ function ImageSpecTable({ specs }: { specs: ImageSpec[] }) {
 }
 
 
+function GuideLinkBar({ links }: { links: GuideLink[] }) {
+  if (!links.length) return null;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {links.map((link, i) => (
+        <a
+          key={i}
+          href={link.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 rounded-lg border border-slate-700/50 bg-slate-800/60 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-violet-500/60 hover:text-violet-300"
+        >
+          {link.type === 'pdf' ? (
+            <svg className="h-3.5 w-3.5 shrink-0 text-rose-400" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+            </svg>
+          ) : (
+            <svg className="h-3.5 w-3.5 shrink-0 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          )}
+          {link.label}
+        </a>
+      ))}
+    </div>
+  );
+}
+
 interface Props {
   params: Promise<{ channelId: string }>;
 }
@@ -64,6 +92,12 @@ export default async function ChannelPage({ params }: Props) {
           </span>
         </div>
         <h2 className="text-2xl font-bold text-white">{channel.name}</h2>
+        {channel.links?.length ? (
+          <div className="mt-3 space-y-1.5">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">공식 가이드</p>
+            <GuideLinkBar links={channel.links} />
+          </div>
+        ) : null}
       </header>
 
       <div className="space-y-10">
