@@ -1,0 +1,149 @@
+import { notFound } from 'next/navigation';
+import { getChannel } from '../../../lib/channels';
+import { ChannelForm } from '../../components/ChannelForm';
+import type { ImageSpec } from '../../../lib/types';
+
+function ImageSpecTable({ specs }: { specs: ImageSpec[] }) {
+  if (!specs.length) return null;
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-700/50 bg-slate-800/60">
+      <table className="min-w-full text-sm">
+        <thead>
+          <tr className="border-b border-slate-700/50">
+            <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">소재</th>
+            <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">사이즈</th>
+            <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">파일 형식</th>
+            <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">최대 용량</th>
+            <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500">비고</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-700/40">
+          {specs.map((s, i) => (
+            <tr key={i} className="transition hover:bg-slate-700/30">
+              <td className="px-4 py-3 font-medium text-slate-100">{s.label}</td>
+              <td className="px-4 py-3 font-mono text-xs text-slate-300">
+                {s.size}
+                {s.ratio && <span className="ml-1 text-slate-500">({s.ratio})</span>}
+              </td>
+              <td className="px-4 py-3">
+                <div className="flex flex-wrap gap-1">
+                  {s.formats.map((f) => (
+                    <span key={f} className="rounded bg-slate-700/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-slate-300">{f}</span>
+                  ))}
+                </div>
+              </td>
+              <td className="px-4 py-3 text-xs text-slate-400">
+                {s.maxSizeKB ? `${s.maxSizeKB}KB` : s.maxSizeMB ? `${s.maxSizeMB}MB` : '-'}
+              </td>
+              <td className="px-4 py-3 text-xs text-slate-500">{s.notes ?? '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+interface Props {
+  params: Promise<{ channelId: string }>;
+}
+
+export default async function ChannelPage({ params }: Props) {
+  const { channelId } = await params;
+  const channel = getChannel(channelId);
+  if (!channel) notFound();
+
+  let savedValues: Record<string, Record<string, string>> = {};
+
+  try {
+    const { supabase } = await import('../../../lib/supabase');
+    if (supabase) {
+      const { data } = await supabase
+        .from('submissions')
+        .select('format_id, field_id, value')
+        .eq('channel_id', channelId);
+
+      if (data) {
+        for (const row of data) {
+          if (!savedValues[row.format_id]) savedValues[row.format_id] = {};
+          savedValues[row.format_id][row.field_id] = row.value;
+        }
+      }
+    }
+  } catch {}
+
+  return (
+    <div className="mx-auto max-w-3xl px-6 py-8">
+      {/* Channel header */}
+      <header className="mb-8">
+        <div className="mb-2 flex items-center gap-2">
+          <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${channel.color}`}>
+            {channel.platform}
+          </span>
+        </div>
+        <h2 className="text-2xl font-bold text-white">{channel.name}</h2>
+      </header>
+
+      {/* Formats */}
+      <div className="space-y-10">
+        {channel.formats.map((format) => (
+          <section key={format.id} className="space-y-5">
+            {channel.formats.length > 1 && (
+              <h3 className="border-b border-slate-700/50 pb-2 text-base font-semibold text-slate-100">
+                {format.name}
+              </h3>
+            )}
+
+            {/* Image spec */}
+            {format.imageSpecs.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-500">이미지 소재 가이드</h4>
+                <ImageSpecTable specs={format.imageSpecs} />
+              </div>
+            )}
+
+            {/* Notes */}
+            {format.notes && format.notes.length > 0 && (
+              <div className="rounded-xl border border-amber-700/40 bg-amber-900/20 px-4 py-3">
+                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-amber-400">유의사항</p>
+                <ul className="space-y-1">
+                  {format.notes.map((note, i) => (
+                    <li key={i} className="flex gap-2 text-xs text-amber-300/80">
+                      <span className="mt-0.5 shrink-0 text-amber-500">•</span>
+                      {note}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Text input form */}
+            {format.textFields.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-500">광고 문구 입력</h4>
+                <div className="rounded-xl border border-slate-700/50 bg-slate-800/60 p-5">
+                  <ChannelForm
+                    channelId={channelId}
+                    format={format}
+                    initialValues={savedValues[format.id] ?? {}}
+                  />
+                </div>
+              </div>
+            )}
+
+            {format.textFields.length === 0 && format.imageSpecs.length > 0 && (
+              <div className="rounded-xl border border-slate-700/50 bg-slate-800/60 px-5 py-4 text-sm text-slate-500">
+                이 광고 형식은 텍스트 문구 입력이 없습니다. 이미지 소재만 제작하면 됩니다.
+              </div>
+            )}
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function generateStaticParams() {
+  const { CHANNELS } = require('../../../lib/channels');
+  return CHANNELS.map((c: { id: string }) => ({ channelId: c.id }));
+}
