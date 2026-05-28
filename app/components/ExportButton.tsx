@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { CHANNELS } from '../../lib/channels';
 
 function localKey(channelId: string, formatId: string, fieldId: string) {
@@ -10,27 +11,42 @@ function localKey(channelId: string, formatId: string, fieldId: string) {
 export function ExportButton() {
   const [loading, setLoading] = useState(false);
 
-  async function handleExport() {
+  function handleExport() {
     setLoading(true);
     try {
-      const submissions = CHANNELS.flatMap((channel) =>
-        channel.formats.flatMap((format) =>
-          format.textFields.map((field) => ({
-            channel_id: channel.id,
-            format_id: format.id,
-            field_id: field.id,
-            value: localStorage.getItem(localKey(channel.id, format.id, field.id)) ?? '',
-          }))
-        )
-      );
+      const rows: (string | number)[][] = [
+        ['매체', '형식', '필드', '내용', '최대 글자수'],
+      ];
 
-      const res = await fetch('/api/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ submissions }),
+      for (const channel of CHANNELS) {
+        for (const format of channel.formats) {
+          for (const field of format.textFields) {
+            const value = localStorage.getItem(localKey(channel.id, format.id, field.id)) ?? '';
+            rows.push([
+              channel.name,
+              format.name,
+              field.label,
+              value,
+              `${field.maxLength}${field.unit === 'byte' ? 'byte' : '자'}`,
+            ]);
+          }
+        }
+      }
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+
+      // Column widths
+      ws['!cols'] = [
+        { wch: 24 }, { wch: 26 }, { wch: 24 }, { wch: 52 }, { wch: 14 },
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '광고 문구');
+
+      const wbout = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+      const blob = new Blob([wbout], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
-      if (!res.ok) throw new Error('export failed');
-      const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
