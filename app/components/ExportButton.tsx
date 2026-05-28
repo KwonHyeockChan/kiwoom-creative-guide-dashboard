@@ -1,6 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { CHANNELS } from '../../lib/channels';
+
+function localKey(channelId: string, formatId: string, fieldId: string) {
+  return `creative-guide:${channelId}:${formatId}:${fieldId}`;
+}
 
 export function ExportButton() {
   const [loading, setLoading] = useState(false);
@@ -8,7 +13,22 @@ export function ExportButton() {
   async function handleExport() {
     setLoading(true);
     try {
-      const res = await fetch('/api/export');
+      const submissions = CHANNELS.flatMap((channel) =>
+        channel.formats.flatMap((format) =>
+          format.textFields.map((field) => ({
+            channel_id: channel.id,
+            format_id: format.id,
+            field_id: field.id,
+            value: localStorage.getItem(localKey(channel.id, format.id, field.id)) ?? '',
+          }))
+        )
+      );
+
+      const res = await fetch('/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submissions }),
+      });
       if (!res.ok) throw new Error('export failed');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getChannel } from '../../../lib/channels';
+import { getChannel, CHANNELS } from '../../../lib/channels';
 import { ChannelForm } from '../../components/ChannelForm';
 import type { ImageSpec } from '../../../lib/types';
 
@@ -53,28 +53,8 @@ export default async function ChannelPage({ params }: Props) {
   const channel = getChannel(channelId);
   if (!channel) notFound();
 
-  let savedValues: Record<string, Record<string, string>> = {};
-
-  try {
-    const { supabase } = await import('../../../lib/supabase');
-    if (supabase) {
-      const { data } = await supabase
-        .from('submissions')
-        .select('format_id, field_id, value')
-        .eq('channel_id', channelId);
-
-      if (data) {
-        for (const row of data) {
-          if (!savedValues[row.format_id]) savedValues[row.format_id] = {};
-          savedValues[row.format_id][row.field_id] = row.value;
-        }
-      }
-    }
-  } catch {}
-
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
-      {/* Channel header */}
       <header className="mb-8">
         <div className="mb-2 flex items-center gap-2">
           <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${channel.color}`}>
@@ -84,7 +64,6 @@ export default async function ChannelPage({ params }: Props) {
         <h2 className="text-2xl font-bold text-white">{channel.name}</h2>
       </header>
 
-      {/* Formats */}
       <div className="space-y-10">
         {channel.formats.map((format) => (
           <section key={format.id} className="space-y-5">
@@ -94,7 +73,6 @@ export default async function ChannelPage({ params }: Props) {
               </h3>
             )}
 
-            {/* Image spec */}
             {format.imageSpecs.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-500">이미지 소재 가이드</h4>
@@ -102,7 +80,6 @@ export default async function ChannelPage({ params }: Props) {
               </div>
             )}
 
-            {/* Notes */}
             {format.notes && format.notes.length > 0 && (
               <div className="rounded-xl border border-amber-700/40 bg-amber-900/20 px-4 py-3">
                 <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-amber-400">유의사항</p>
@@ -117,16 +94,11 @@ export default async function ChannelPage({ params }: Props) {
               </div>
             )}
 
-            {/* Text input form */}
             {format.textFields.length > 0 && (
               <div className="space-y-3">
                 <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-500">광고 문구 입력</h4>
                 <div className="rounded-xl border border-slate-700/50 bg-slate-800/60 p-5">
-                  <ChannelForm
-                    channelId={channelId}
-                    format={format}
-                    initialValues={savedValues[format.id] ?? {}}
-                  />
+                  <ChannelForm channelId={channelId} format={format} />
                 </div>
               </div>
             )}
@@ -144,6 +116,5 @@ export default async function ChannelPage({ params }: Props) {
 }
 
 export function generateStaticParams() {
-  const { CHANNELS } = require('../../../lib/channels');
-  return CHANNELS.map((c: { id: string }) => ({ channelId: c.id }));
+  return CHANNELS.map((c) => ({ channelId: c.id }));
 }

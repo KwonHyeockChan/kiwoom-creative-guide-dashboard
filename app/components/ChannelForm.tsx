@@ -15,6 +15,10 @@ function getLength(str: string, unit: 'char' | 'byte'): number {
   return unit === 'byte' ? getByteLength(str) : str.length;
 }
 
+function localKey(channelId: string, formatId: string, fieldId: string) {
+  return `creative-guide:${channelId}:${formatId}:${fieldId}`;
+}
+
 function FieldInput({
   field,
   value,
@@ -64,37 +68,28 @@ function FieldInput({
 interface Props {
   channelId: string;
   format: AdFormat;
-  initialValues?: Record<string, string>;
 }
 
-export function ChannelForm({ channelId, format, initialValues = {} }: Props) {
-  const [values, setValues] = useState<Record<string, string>>(initialValues);
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+export function ChannelForm({ channelId, format }: Props) {
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setValues(initialValues);
-    setStatus('idle');
+    const loaded: Record<string, string> = {};
+    for (const field of format.textFields) {
+      const stored = localStorage.getItem(localKey(channelId, format.id, field.id));
+      if (stored) loaded[field.id] = stored;
+    }
+    setValues(loaded);
+    setMounted(true);
   }, [channelId, format.id]);
 
   function setValue(fieldId: string, value: string) {
     setValues((prev) => ({ ...prev, [fieldId]: value }));
-    if (status === 'saved') setStatus('idle');
+    localStorage.setItem(localKey(channelId, format.id, fieldId), value);
   }
 
-  async function handleSave() {
-    setStatus('saving');
-    try {
-      const res = await fetch('/api/submissions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channel_id: channelId, format_id: format.id, fields: values }),
-      });
-      if (!res.ok) throw new Error();
-      setStatus('saved');
-    } catch {
-      setStatus('error');
-    }
-  }
+  if (!mounted) return <div className="h-20 animate-pulse rounded-lg bg-slate-800/40" />;
 
   return (
     <div className="space-y-4">
@@ -106,30 +101,6 @@ export function ChannelForm({ channelId, format, initialValues = {} }: Props) {
           onChange={(v) => setValue(field.id, v)}
         />
       ))}
-
-      <div className="flex items-center gap-3 pt-2">
-        <button
-          onClick={handleSave}
-          disabled={status === 'saving'}
-          className="flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:opacity-60"
-        >
-          {status === 'saving' ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-          ) : null}
-          저장하기
-        </button>
-        {status === 'saved' && (
-          <span className="flex items-center gap-1.5 text-sm text-emerald-400 font-medium">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            저장되었습니다
-          </span>
-        )}
-        {status === 'error' && (
-          <span className="text-sm text-rose-400">저장 실패. 다시 시도해주세요.</span>
-        )}
-      </div>
     </div>
   );
 }
