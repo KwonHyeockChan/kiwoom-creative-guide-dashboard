@@ -14,16 +14,17 @@ export function ExportButton() {
   function handleExport() {
     setLoading(true);
     try {
-      const rows: (string | number)[][] = [
-        ['매체', '형식', '필드', '내용', '최대 글자수'],
-      ];
+      const wb = XLSX.utils.book_new();
 
       for (const channel of CHANNELS) {
+        const rows: (string | number)[][] = [
+          ['형식', '필드', '내용', '최대 글자수'],
+        ];
+
         for (const format of channel.formats) {
           for (const field of format.textFields) {
             const value = localStorage.getItem(localKey(channel.id, format.id, field.id)) ?? '';
             rows.push([
-              channel.name,
               format.name,
               field.label,
               value,
@@ -31,17 +32,16 @@ export function ExportButton() {
             ]);
           }
         }
+
+        if (rows.length === 1) continue; // 텍스트 필드 없는 채널은 시트 생성 안 함
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws['!cols'] = [{ wch: 26 }, { wch: 24 }, { wch: 52 }, { wch: 14 }];
+
+        // 시트 이름은 31자 이하여야 함 (Excel 제한)
+        const sheetName = channel.name.slice(0, 31);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
       }
-
-      const ws = XLSX.utils.aoa_to_sheet(rows);
-
-      // Column widths
-      ws['!cols'] = [
-        { wch: 24 }, { wch: 26 }, { wch: 24 }, { wch: 52 }, { wch: 14 },
-      ];
-
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '광고 문구');
 
       const wbout = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
       const blob = new Blob([wbout], {
