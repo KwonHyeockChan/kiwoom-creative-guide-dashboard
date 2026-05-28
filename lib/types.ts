@@ -23,6 +23,8 @@ export interface AdFormat {
   imageSpecs: ImageSpec[];
   textFields: TextField[];
   notes?: string[];
+  guideImages?: string[];   // 레이아웃/가이드 이미지 경로 (/images/...)
+  exampleImages?: string[]; // 완성 소재 예시 이미지 경로 (/images/...)
 }
 
 export interface MediaChannel {

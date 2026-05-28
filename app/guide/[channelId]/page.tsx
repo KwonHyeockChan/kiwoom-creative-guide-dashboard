@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getChannel, CHANNELS } from '../../../lib/channels';
 import { ChannelForm } from '../../components/ChannelForm';
@@ -44,6 +45,31 @@ function ImageSpecTable({ specs }: { specs: ImageSpec[] }) {
   );
 }
 
+function ImageGallery({ images, label }: { images: string[]; label: string }) {
+  if (!images.length) return null;
+  return (
+    <div className="space-y-2">
+      <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-500">{label}</h4>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {images.map((src, i) => (
+          <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="group relative block overflow-hidden rounded-xl border border-slate-700/50 bg-slate-800/60 transition hover:border-violet-500/60">
+            <Image
+              src={src}
+              alt={`${label} ${i + 1}`}
+              width={400}
+              height={300}
+              className="h-auto w-full object-contain"
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover:bg-black/30 group-hover:opacity-100">
+              <span className="rounded bg-black/60 px-2 py-1 text-xs text-white">크게 보기</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   params: Promise<{ channelId: string }>;
 }
@@ -80,6 +106,8 @@ export default async function ChannelPage({ params }: Props) {
               </div>
             )}
 
+            <ImageGallery images={format.guideImages ?? []} label="레이아웃 가이드" />
+
             {format.notes && format.notes.length > 0 && (
               <div className="rounded-xl border border-amber-700/40 bg-amber-900/20 px-4 py-3">
                 <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-amber-400">유의사항</p>
@@ -103,7 +131,9 @@ export default async function ChannelPage({ params }: Props) {
               </div>
             )}
 
-            {format.textFields.length === 0 && format.imageSpecs.length > 0 && (
+            <ImageGallery images={format.exampleImages ?? []} label="소재 예시" />
+
+            {format.textFields.length === 0 && format.imageSpecs.length === 0 && (
               <div className="rounded-xl border border-slate-700/50 bg-slate-800/60 px-5 py-4 text-sm text-slate-500">
                 이 광고 형식은 텍스트 문구 입력이 없습니다. 이미지 소재만 제작하면 됩니다.
               </div>
