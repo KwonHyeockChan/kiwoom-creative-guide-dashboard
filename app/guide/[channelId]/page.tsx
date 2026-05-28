@@ -1,7 +1,7 @@
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getChannel, CHANNELS } from '../../../lib/channels';
 import { ChannelForm } from '../../components/ChannelForm';
+import { ImageGallery } from '../../components/ImageGallery';
 import type { ImageSpec } from '../../../lib/types';
 
 function ImageSpecTable({ specs }: { specs: ImageSpec[] }) {
@@ -45,30 +45,6 @@ function ImageSpecTable({ specs }: { specs: ImageSpec[] }) {
   );
 }
 
-function ImageGallery({ images, label }: { images: string[]; label: string }) {
-  if (!images.length) return null;
-  return (
-    <div className="space-y-2">
-      <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-500">{label}</h4>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {images.map((src, i) => (
-          <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="group relative block overflow-hidden rounded-xl border border-slate-700/50 bg-slate-800/60 transition hover:border-violet-500/60">
-            <Image
-              src={src}
-              alt={`${label} ${i + 1}`}
-              width={400}
-              height={300}
-              className="h-auto w-full object-contain"
-            />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover:bg-black/30 group-hover:opacity-100">
-              <span className="rounded bg-black/60 px-2 py-1 text-xs text-white">크게 보기</span>
-            </div>
-          </a>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 interface Props {
   params: Promise<{ channelId: string }>;
