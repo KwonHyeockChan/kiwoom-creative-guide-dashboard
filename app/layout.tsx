@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
-import { Geist } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
 import './globals.css';
-
-const geist = Geist({ subsets: ['latin'], variable: '--font-geist' });
 
 export const metadata: Metadata = {
   title: '소재 제작 가이드 | 키움증권',
@@ -11,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={`${geist.variable} h-full`}>
+    <html lang="ko" className={`${GeistSans.variable} h-full`}>
       <body className="h-full bg-[#0b1220] font-sans text-slate-100 antialiased">{children}</body>
     </html>
   );

@@ -52,7 +52,7 @@ export function ImageGallery({ images, label }: Props) {
               ✕
             </button>
             <img
-              src={lightbox}
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}${lightbox}`}
               alt="크게 보기"
               className="max-h-[88vh] max-w-[88vw] rounded-xl object-contain shadow-2xl"
             />
